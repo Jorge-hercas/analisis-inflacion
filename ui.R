@@ -69,12 +69,23 @@ fluidPage(
       ),
       selected = "months"
     ),
+    pickerInput(
+      "dif_perc","Tipos de diferencias porcentuales a visualizar",
+      choices = c(
+        "Mensuales anualizados",
+        "Quincenales anualizados",
+        "Mensuales con respecto al último dato anterior",
+        "Quincenales con respecto al último dato anterior"
+      ),
+      selected = "months"
+    ),
     awesomeRadio(
       inputId = "visual",
       label = "Información a visualizar", 
       choices = c("Comparativo", "Diferencias", "Ambos"),
       selected = "Comparativo", inline = T
-    )
+    ),
+    actionButton("in_plot", "Generar gráfico", icon = icon("chart-line"))
     ),
     column(width = 9,
            tabsetPanel(

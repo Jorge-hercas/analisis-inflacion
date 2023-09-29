@@ -14,13 +14,13 @@ library(lubridate)
 setToken("ed753930baf67bff05f52150712bb82a155a2978ea1b2c2800bed51a8dba72f1")
 subyacente <- 
   getSerieDataFrame(getSeriesData(c("SP74660"), 
-                                  as.Date('1990-01-01'),
-                                  as.Date('2024-07-12')), 
+                                  as.Date('1950-01-01'),
+                                  today() %m+% years(1)), 
                     c("SP74660"))
 no_subyacente <- 
   getSerieDataFrame(getSeriesData(c("SP74663"), 
-                                  as.Date('1990-01-01'),
-                                  as.Date('2024-07-12')), 
+                                  as.Date('1950-01-01'),
+                                  today() %m+% years(1)), 
                     c("SP74663"))
 
 datos <- 
