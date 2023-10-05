@@ -85,7 +85,8 @@ fluidPage(
       choices = c("Comparativo", "Diferencias", "Ambos"),
       selected = "Comparativo", inline = T
     ),
-    actionButton("in_plot", "Generar gráfico", icon = icon("chart-line"))
+    actionButton("in_plot", "Generar gráfico", icon = icon("chart-line")),
+    downloadButton("download", "Descargar datos", icon = icon("file-excel"))
     ),
     column(width = 9,
            tabsetPanel(

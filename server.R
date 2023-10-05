@@ -2,6 +2,39 @@
 
 function(input, output, session){
   
+  x <- reactive({
+    
+    datos |>
+      filter(between(date,min( input$fechas), max( input$fechas))) |> 
+      mutate(date = floor_date(date, input$red_fechas)) |> 
+      group_by(date) |> 
+      summarise(
+        subyacente = mean(subyacente),
+        no_subyacente = mean(no_subyacente)
+      ) |> 
+      tidyr::pivot_longer(names_to = "tipo_inf", cols = c(subyacente,no_subyacente))
+    
+  })
+  
+  y <- reactive({
+    
+    datos |>
+      filter(between(date,min( input$fechas), max( input$fechas))) |> 
+      mutate(date = floor_date(date, input$red_fechas)) |> 
+      group_by(date) |> 
+      summarise(
+        subyacente = mean(subyacente),
+        no_subyacente = mean(no_subyacente)
+      )  |> 
+      mutate(
+        subyacente_difs = (subyacente-lag(subyacente))/lag(subyacente),
+        no_subyacente_difs = (no_subyacente - lag(no_subyacente))/lag(no_subyacente)
+      ) |> 
+      select(date, subyacente_difs, no_subyacente_difs) |> 
+      tidyr::pivot_longer(names_to = "tipo_inf", cols = c(subyacente_difs,no_subyacente_difs))
+    
+  })
+  
   
   output$diferencias <- renderEcharts4r({
     
@@ -262,6 +295,35 @@ function(input, output, session){
     
   }) |> 
     bindEvent(input$in_plot)
+  
+  
+  output$download <- downloadHandler(
+    filename = function(){
+      paste0("Descarga ", today(), ".xlsx")
+    },
+    content = function(file){
+      
+      wb_workbook() |> 
+        wb_add_worksheet("Inflación. Evol", gridLines = F, 
+                         tabColor = RColorBrewer::brewer.pal(5,"YlOrRd")[1]) |> 
+        wb_add_mschart(
+          dims = "G5", graph = ms_barchart(
+            x(), x = "date", y = "value", group = "tipo_inf", asis = F) |> 
+            chart_ax_x(num_fmt = "[$-es-ES]mmm yyyy") |> 
+            chart_labels(title = "Inflación observada por componentes")) |> 
+        wb_add_worksheet("Inflación. Difs", gridLines = F, 
+                         tabColor = RColorBrewer::brewer.pal(5,"YlOrRd")[1]) |> 
+        wb_add_mschart(
+          dims = "G5", graph = ms_barchart(
+            y(), x = "date", y = "value", group = "tipo_inf", asis = F) |> 
+            chart_ax_x(num_fmt = "[$-es-ES]mmm yyyy") |> 
+            chart_labels(title = "Difs en inflación observada por componentes")) |> 
+        wb_save(path = file)
+      
+    }
+  )
+  
+  
   
 }
 

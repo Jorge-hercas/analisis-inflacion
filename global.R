@@ -8,6 +8,8 @@ library(reactable)
 library(reactablefmtr)
 library(dplyr)
 library(lubridate)
+library(openxlsx2)
+library(mschart)
 
 
 # Banxico
