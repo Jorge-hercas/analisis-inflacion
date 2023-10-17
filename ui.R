@@ -93,7 +93,13 @@ fluidPage(
              tabPanel("Subyacente vs no subyacente",
                       uiOutput("graficos")
                   ),
-             tabPanel("Componentes")
+             tabPanel("Componentes",
+                      column(width = 12, align ="center",
+                             pickerInput("comps_sel", "Componentes a visualizar", choices = unique(comps_long$Componente),
+                                         selected = unique(comps_long$Componente), multiple = T
+                                         )),
+                      uiOutput("graficos_componentes")
+                      )
            )
         )
   )

@@ -296,6 +296,108 @@ function(input, output, session){
   }) |> 
     bindEvent(input$in_plot)
   
+  output$graficos_componentes <- renderUI({
+    
+    if (input$visual == "Comparativo"){
+      column(width = 12,
+             echarts4rOutput("comparativo_comps", height = 500)
+      )
+    }else if (input$visual == "Diferencias"){
+      column(width = 12,
+             echarts4rOutput("diferencias_comps", height = 500)
+      )
+    }else{
+      column(width = 12,
+             column(width = 6,
+                    echarts4rOutput("comparativo_comps", height = 500)
+             ),
+             column(width = 6,
+                    echarts4rOutput("diferencias_comps", height = 500)
+             )
+             
+      )
+    }
+    
+    
+  }) |> 
+    bindEvent(input$in_plot)
+  
+  
+  datos_componentes <- reactive({
+    
+    componentes |> 
+      tidyr::pivot_longer(!Fecha, names_to = "Componente", values_to = "Valor") |> 
+      filter(between(Fecha,min( input$fechas), max( input$fechas)) & Componente %in% input$comps_sel) |> 
+      group_by(Componente) |> 
+      mutate(inflacion = ((Valor-lag(Valor))/lag(Valor))*100) |> 
+      mutate(diferencias = inflacion - lag(inflacion),
+             Fecha = floor_date(Fecha, input$red_fechas)) |> 
+      group_by(Componente, Fecha) |> 
+      summarise(inflacion = mean(inflacion, na.rm = T),
+                diferencias = mean(diferencias, na.rm = T)) |> 
+      group_by(Componente)
+    
+  })
+  
+  
+  output$comparativo_comps <- renderEcharts4r({
+    
+    datos_componentes() |> 
+      e_charts(Fecha) |> 
+      e_bar(inflacion, symbol = "none") |> 
+      e_theme("auritus") |> 
+      e_title("Inflación en México", 
+              "Observaciones quincenales", left = "center",
+              textStyle = list(
+                color = "#e3d6b1",
+                fontFamily = "oswald")) |> 
+      e_tooltip(trigger = "axis",
+                textStyle = list(
+                  fontFamily = "oswald"
+                )) |> 
+      e_legend(orient = "horizontal", bottom = 0,
+               textStyle = list(
+                 color = "#e3d6b1",
+                 fontFamily = "oswald"
+               )) |> 
+      e_text_style(color = "gray", font = "oswald") |> 
+      e_color(color = c( "#003049", "#d62828", "#f77f00", "#fcbf49")) |> 
+      e_toolbox_feature(
+        feature = "dataZoom"
+      )
+    
+  }) |> 
+    bindEvent(input$in_plot)
+  
+  output$diferencias_comps <- renderEcharts4r({
+    
+    datos_componentes() |> 
+      e_charts(Fecha) |> 
+      e_bar(diferencias, symbol = "none") |> 
+      e_theme("auritus") |> 
+      e_title("Inflación en México", 
+              "Diferencias porcentuales", left = "center",
+              textStyle = list(
+                color = "#e3d6b1",
+                fontFamily = "oswald")) |> 
+      e_tooltip(trigger = "axis",
+                textStyle = list(
+                  fontFamily = "oswald"
+                )) |> 
+      e_legend(orient = "horizontal", bottom = 0,
+               textStyle = list(
+                 color = "#e3d6b1",
+                 fontFamily = "oswald"
+               )) |> 
+      e_text_style(color = "gray", font = "oswald") |> 
+      e_color(color = c( "#003049", "#d62828", "#f77f00", "#fcbf49")) |> 
+      e_toolbox_feature(
+        feature = "dataZoom"
+      )
+    
+  }) |> 
+    bindEvent(input$in_plot)
+  
   
   output$download <- downloadHandler(
     filename = function(){

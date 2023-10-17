@@ -37,7 +37,7 @@ subyacente |>
       )
   )
 
-
+source("componentes data.R")
 
 
 
