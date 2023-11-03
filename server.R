@@ -5,7 +5,7 @@ function(input, output, session){
   x <- reactive({
     
     datos |>
-      filter(between(date,min( input$fechas), max( input$fechas))) |> 
+      filter(between(date,min( input$fechas), max(input$fechas))) |> 
       mutate(date = floor_date(date, input$red_fechas)) |> 
       group_by(date) |> 
       summarise(
@@ -13,6 +13,44 @@ function(input, output, session){
         no_subyacente = mean(no_subyacente)
       ) |> 
       tidyr::pivot_longer(names_to = "tipo_inf", cols = c(subyacente,no_subyacente))
+    
+  })
+  
+  
+  output$minimo <- renderCountup({
+    
+    countup(min(x()$value)[1], 
+            duration = 6,
+            options = list(
+              suffix = paste0(
+                "% (",x()$date[x()$value == min(x()$value)[1]],")"
+              )
+            )
+    )
+    
+  })
+  
+  output$maximo <- renderCountup({
+    
+    countup(max(x()$value)[1], 
+            duration = 6,
+            options = list(
+              suffix = paste0(
+                "% (",x()$date[x()$value == max(x()$value)[1]],")"
+              )
+            )
+    )
+    
+  })
+  
+  output$promedio <- renderCountup({
+    
+    countup(mean(x()$value)[1], 
+            duration = 6,
+            options = list(
+              suffix = "%"
+            )
+    )
     
   })
   
@@ -425,6 +463,123 @@ function(input, output, session){
     }
   )
   
+  data_model <- reactive({
+    
+    data <- if(input$inf_tipo == "Subyacente"){subyacente |> 
+        filter(between(date,min( input$fechas), max(input$fechas))) }else{no_subyacente |> 
+            filter(between(date,min( input$fechas), max(input$fechas)))}
+    date <- c(year(min(data$date)), month(min(data$date)), 1)
+    
+    x <- 
+    if (input$modelo == "ARIMA"){
+      fortify(
+        forecast(h = input$periodos, auto.arima(
+          ts(data$value, start = date, frequency = 12 )
+        ))
+      )
+    }else{
+      fortify(
+        forecast(h = input$periodos, bats(
+          ts(data$value, start = date, frequency = 12 )
+        ))
+      )
+    }
+    
+    x
+    
+  })
+  
+  output$pronostico <- renderEcharts4r({
+    
+    data_model() |> 
+      mutate(fecha = as.Date(Index) ) |> 
+      e_charts(fecha, dispose = FALSE) |> 
+      e_line(Data, symbol = "none", name = "Valor observado") |> 
+      e_line(`Point Forecast`, symbol = "none", name = "Valor pronosticado") |> 
+      e_theme("auritus") |> 
+      e_legend(FALSE) |> 
+      e_y_axis(show = FALSE) |> 
+      e_tooltip(trigger = "axis",
+                confine = TRUE,
+                textStyle = list(fontFamily = "Roboto Condensed", 
+                                 fontSize = 12)) |> 
+      e_toolbox_feature(
+        feature = c("dataZoom", "restore")
+      ) |> 
+      e_color(color = c("#003049", "#d62828")) |> 
+      e_title(
+        paste0("Pronóstico de la variable ", "'", input$fred, "' ", "de la FRED"
+               
+        ),
+        paste0("Periodos pronosticados: ", input$periodos), 
+        left = "center",
+        textStyle = list(
+          color = "gray",
+          fontFamily = "Roboto Condensed"
+        )
+      )
+    
+  }) |> 
+    bindEvent(input$in_plot)
+  
+  
+  output$tabla_datos <- renderReactable({
+    
+    df_serie_fred <- data_model() |> 
+      select(Index, Data, `Point Forecast`) |> 
+      mutate(variacion = Data-lag(Data)) 
+    
+    df_serie_fred$variacion[is.na(df_serie_fred$variacion)] <- 0
+    
+    df_serie_fred |> 
+      setNames(c("Fecha", "Valor observado", "Valor pronosticado", "Variación por periodo")) |> 
+      reactable(compact = FALSE, 
+                theme = reactableTheme(backgroundColor = "transparent",
+                                       #color = "white",
+                                       # Vertically center cells
+                                       cellStyle = list(display = "flex", 
+                                                        flexDirection = "column", 
+                                                        justifyContent = "left"),
+                ),
+                paginationType = "simple",
+                language = reactableLang(
+                  searchPlaceholder = "Buscar datos",
+                  noData = "Sin datos registrados",
+                  pageInfo = "{rowStart}\u2013{rowEnd} de {rows} observaciones",
+                  pagePrevious = "\u276e",
+                  pageNext = "\u276f",
+                ),
+                columnGroups = list(
+                  colGroup(
+                    name = "Valores", columns = c("Valor observado","Valor pronosticado")
+                  )
+                ),
+                style = list(fontFamily = "Roboto Condensed", fontSize = "14px",
+                             text = "gray"),
+                searchable = FALSE,
+                defaultPageSize = 9,
+                columns = list(
+                  "Variación por periodo" = colDef(
+                    format = colFormat(
+                      digits = 2
+                    ),
+                    style = function(value) {
+                      if (value > 0) {
+                        color <- "#68b85f"
+                      } else if (value < 0) {
+                        color <- "#853434"
+                      } else {
+                        color <- "#777"
+                      }
+                      list(color = color, fontWeight = "bold")
+                    }
+                  )
+                )
+                
+      )
+    
+  }) |> 
+    bindEvent(input$in_plot)
   
   
 }

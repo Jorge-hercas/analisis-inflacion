@@ -1,7 +1,11 @@
 
 
 fluidPage(
+  useBs4Dash(),
+  add_busy_spinner(spin = "fulfilling-bouncing-circle", position = "bottom-right"),
   gfonts::use_pkg_gfont("oswald"),
+  chooseSliderSkin("Flat"),
+  setSliderColor("gray", 1),
   setBackgroundColor("#546073"),
   tags$head(
     tags$style(HTML("
@@ -21,9 +25,9 @@ fluidPage(
     ),
     column(width = 2,
            align = "center",
-           img(src = "https://vfsgroup.carrd.co/assets/images/image01.png?v=392d0626",height="50px")),
+           img(src = "https://icons.veryicon.com/png/o/miscellaneous/dist-icon-20-outlined/plot-ratio.png",height="50px")),
     column(width = 4, 
-           h1("INFLACIÓN EN MÉXICO. ", id = "titlepanel"),
+           h1(typed(c("INFLACIÓN EN MÉXICO", "ANÁLISIS DE LA INFLACIÓN"),typeSpeed = 20,backSpeed = 20), id = "titlepanel"),
            tags$style(HTML("#titlepanel{color: #e3d6b1;
                            font-size: 50px;
                            }")),
@@ -91,6 +95,36 @@ fluidPage(
     column(width = 9,
            tabsetPanel(
              tabPanel("Subyacente vs no subyacente",
+                      br(),
+                      fluidRow(
+                        column(width = 4,
+                               bs4ValueBox(
+                                 width = 12,
+                                 value = "Mínimo",
+                                 subtitle = countupOutput("minimo"),
+                                 color = "gray",
+                                 icon = icon("arrow-down")
+                               )
+                        ),
+                        column(width = 4,
+                               bs4ValueBox(
+                                 width = 12,
+                                 value = "Máximo",
+                                 subtitle = countupOutput("maximo"),
+                                 color = "gray",
+                                 icon = icon("arrow-up")
+                               )
+                        ),
+                        column(width = 4,
+                               bs4ValueBox(
+                                 width = 12,
+                                 value = "Promedio",
+                                 subtitle = countupOutput("promedio"),
+                                 color = "gray",
+                                 icon = icon("percent")
+                               )
+                        )
+                      ),
                       uiOutput("graficos")
                   ),
              tabPanel("Componentes",
@@ -99,7 +133,29 @@ fluidPage(
                                          selected = unique(comps_long$Componente), multiple = T
                                          )),
                       uiOutput("graficos_componentes")
+                      ),
+             tabPanel("Pronóstico",
+                      fluidRow(
+                        column(width = 4, align ="center",
+                               pickerInput("inf_tipo", "Tipo de inflación a pronosticar", choices = c("Subyacente", "No subyacente")
+                               )),
+                        column(width = 4, align = "center", sliderInput("periodos", "Periodos a pronosticar", value = 12,
+                                                                        min = 1, max = 40
+                        )),
+                        column(width = 4, align = "center", 
+                               awesomeRadio("modelo", "Modelo a utilizar", choices = c("ARIMA", "BATS"), inline = T)
+                               )
+                      ),
+                      fluidRow(
+                        column(width = 4,
+                               reactableOutput("tabla_datos")
+                               ),
+                        column(width = 8,
+                               column(width = 12,
+                                      echarts4rOutput("pronostico"))
+                               )
                       )
+             )
            )
         )
   )

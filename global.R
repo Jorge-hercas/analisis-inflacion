@@ -10,7 +10,13 @@ library(dplyr)
 library(lubridate)
 library(openxlsx2)
 library(mschart)
-
+library(bs4Dash)
+library(countup)
+library(typedjs)
+library(ggplot2)
+library(ggfortify)
+library(forecast)
+library(shinybusy)
 
 # Banxico
 setToken("ed753930baf67bff05f52150712bb82a155a2978ea1b2c2800bed51a8dba72f1")
@@ -27,9 +33,7 @@ no_subyacente <-
 
 datos <- 
 subyacente |> 
-  rename(
-    subyacente = value
-  ) |> 
+  rename(subyacente = value) |> 
   left_join(
     no_subyacente |> 
       rename(

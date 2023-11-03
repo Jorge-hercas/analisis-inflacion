@@ -44,7 +44,9 @@ rm(mercancias)
 rm(energeticos)
 rm(agropecuarios)
 
-
+comps_long <- 
+  componentes |> 
+  tidyr::pivot_longer(!Fecha, names_to = "Componente", values_to = "Valor")
 
 
 
