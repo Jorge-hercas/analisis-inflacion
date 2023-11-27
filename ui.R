@@ -90,7 +90,9 @@ fluidPage(
       selected = "Comparativo", inline = T
     ),
     actionButton("in_plot", "Generar gráfico", icon = icon("chart-line")),
-    downloadButton("download", "Descargar datos", icon = icon("file-excel"))
+    downloadButton("download", "Descargar datos", icon = icon("file-excel")),
+    br(),br(),
+    actionButton("refresh", "Refrescar los datos", icon = icon("rotate-right")),
     ),
     column(width = 9,
            tabsetPanel(

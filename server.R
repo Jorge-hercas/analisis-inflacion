@@ -4,6 +4,9 @@ function(input, output, session){
   
   x <- reactive({
     
+    if (input$refresh < 1){
+    
+    datos <-
     datos |>
       filter(between(date,min( input$fechas), max(input$fechas))) |> 
       mutate(date = floor_date(date, input$red_fechas)) |> 
@@ -13,6 +16,39 @@ function(input, output, session){
         no_subyacente = mean(no_subyacente)
       ) |> 
       tidyr::pivot_longer(names_to = "tipo_inf", cols = c(subyacente,no_subyacente))
+      datos
+    }else{
+      subyacente <- 
+        getSerieDataFrame(getSeriesData(c("SP74660"), 
+                                        as.Date('2010-01-01'),
+                                        today() %m+% years(1)), 
+                          c("SP74660"))
+      no_subyacente <- 
+        getSerieDataFrame(getSeriesData(c("SP74663"), 
+                                        as.Date('2010-01-01'),
+                                        today() %m+% years(1)), 
+                          c("SP74663"))
+      datos <- 
+        subyacente |> 
+        rename(subyacente = value) |> 
+        left_join(
+          no_subyacente |> 
+            rename(
+              no_subyacente = value
+            )
+        )
+      datos <- 
+      datos |>
+        filter(between(date,min( input$fechas), max(input$fechas))) |> 
+        mutate(date = floor_date(date, input$red_fechas)) |> 
+        group_by(date) |> 
+        summarise(
+          subyacente = mean(subyacente),
+          no_subyacente = mean(no_subyacente)
+        ) |> 
+        tidyr::pivot_longer(names_to = "tipo_inf", cols = c(subyacente,no_subyacente))
+      datos
+    }
     
   })
   
@@ -29,6 +65,10 @@ function(input, output, session){
     )
     
   })
+  
+  
+  
+  
   
   output$maximo <- renderCountup({
     
